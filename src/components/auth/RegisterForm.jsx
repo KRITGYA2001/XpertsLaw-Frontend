@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,7 @@ import { Eye, EyeOff } from "lucide-react";
 const RegisterForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { login } = useAuth();
+  const { signup } = useAuth();
   
   const [formData, setFormData] = useState({
     firstName: "",
@@ -67,23 +66,28 @@ const RegisterForm = () => {
     setIsLoading(true);
     
     try {
-      // In a real app, this would be an API call to your registration endpoint
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      
-      // Call the login function from AuthContext to automatically log in the user
-      login({
-        id: "user123",
-        name: `${formData.firstName} ${formData.lastName}`,
+      const result = await signup({
+        first_name: formData.firstName,
+        last_name: formData.lastName,
         email: formData.email,
-        role: formData.accountType,
+        password: formData.password,
+        confirm_password: formData.confirmPassword,
+        user_type: formData.accountType,
       });
-      
-      toast({
-        title: "Registration Successful",
-        description: "Your account has been created successfully!",
-      });
-      
-      navigate("/dashboard");
+
+      if (result.success) {
+        toast({
+          title: "Registration Successful",
+          description: "Your account has been created successfully! Please login to continue.",
+        });
+        navigate("/login");
+      } else {
+        toast({
+          title: "Registration Failed",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       toast({
         title: "Registration Failed",

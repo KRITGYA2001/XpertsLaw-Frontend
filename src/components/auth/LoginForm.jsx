@@ -1,10 +1,8 @@
-
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Eye, EyeOff } from "lucide-react";
@@ -17,17 +15,16 @@ const LoginForm = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    rememberMe: false,
   });
   
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
     });
   };
   
@@ -36,27 +33,28 @@ const LoginForm = () => {
     setIsLoading(true);
     
     try {
-      // In a real app, this would be an API call to your authentication endpoint
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      
-      // Call the login function from AuthContext
-      login({
-        id: "user123",
-        name: "John Doe",
+      const result = await login({
         email: formData.email,
-        role: "client",
+        password: formData.password,
       });
-      
-      toast({
-        title: "Login Successful",
-        description: "Welcome back to XpertsLaw!",
-      });
-      
-      navigate("/dashboard");
+
+      if (result.success) {
+        toast({
+          title: "Login Successful",
+          description: "Welcome back to XpertsLaw!",
+        });
+        navigate("/dashboard");
+      } else {
+        toast({
+          title: "Login Failed",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       toast({
         title: "Login Failed",
-        description: error.message || "Please check your credentials and try again.",
+        description: error.message || "There was a problem logging in.",
         variant: "destructive",
       });
     } finally {
@@ -69,7 +67,7 @@ const LoginForm = () => {
       <div className="text-center">
         <h1 className="text-2xl font-bold">Welcome back</h1>
         <p className="text-muted-foreground mt-2">
-          Sign in to your account to continue
+          Sign in to your XpertsLaw account
         </p>
       </div>
       
@@ -88,12 +86,7 @@ const LoginForm = () => {
         </div>
         
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="password">Password</Label>
-            <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-              Forgot password?
-            </Link>
-          </div>
+          <Label htmlFor="password">Password</Label>
           <div className="relative">
             <Input
               id="password"
@@ -112,23 +105,6 @@ const LoginForm = () => {
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="rememberMe"
-            name="rememberMe"
-            checked={formData.rememberMe}
-            onCheckedChange={(checked) => 
-              setFormData({...formData, rememberMe: checked})
-            }
-          />
-          <label
-            htmlFor="rememberMe"
-            className="text-sm text-muted-foreground leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-          >
-            Remember me for 30 days
-          </label>
         </div>
         
         <Button type="submit" className="w-full" disabled={isLoading}>
