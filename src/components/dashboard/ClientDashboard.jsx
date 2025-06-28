@@ -88,7 +88,7 @@ const ClientDashboard = ({ user }) => {
         <div>
           <h1 className="text-3xl font-bold">Welcome, {user.name}</h1>
           <p className="text-muted-foreground">
-            Manage your consultations, documents, and messages
+            Manage your consultations, documents, and messages (client)
           </p>
         </div>
         <Link to="/lawyers">

@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Menu, X, User, LogIn } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const toggleMenu = () => setIsOpen(!isOpen);
   const closeMenu = () => setIsOpen(false);
@@ -50,14 +52,30 @@ const Navbar = () => {
 
         <div className="hidden md:flex items-center space-x-4">
           {user ? (
+            // 
             <>
+              {user.role === "lawyer" && (
+                <Link to="/profile">
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <User size={16} />
+                    Lawyer Profile
+                  </Button>
+                </Link>
+              )}
               <Link to="/dashboard">
                 <Button variant="ghost" size="sm" className="gap-2">
                   <User size={16} />
                   Dashboard
                 </Button>
               </Link>
-              <Button variant="outline" size="sm" onClick={logout}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  logout();
+                  navigate("/");
+                }}
+              >
                 Sign Out
               </Button>
             </>
@@ -111,7 +129,31 @@ const Navbar = () => {
               ))}
               <div className="pt-4 border-t flex flex-col space-y-3">
                 {user ? (
+                  // <>
+                  //   <Link to="/dashboard" onClick={closeMenu}>
+                  //     <Button variant="outline" className="w-full justify-start gap-2">
+                  //       <User size={16} />
+                  //       Dashboard
+                  //     </Button>
+                  //   </Link>
+                  //   <Button variant="ghost" className="w-full justify-start" onClick={() => {
+                  //       logout();
+                  //       closeMenu();
+                  //       navigate("/");
+                  //     }}
+                  //   >
+                  //     Sign Out
+                  //   </Button>
+                  // </>
                   <>
+                    {user.role === "lawyer" && (
+                      <Link to="/profile" onClick={closeMenu}>
+                        <Button variant="outline" className="w-full justify-start gap-2">
+                          <User size={16} />
+                          Lawyer Profile
+                        </Button>
+                      </Link>
+                    )}
                     <Link to="/dashboard" onClick={closeMenu}>
                       <Button variant="outline" className="w-full justify-start gap-2">
                         <User size={16} />
@@ -121,6 +163,7 @@ const Navbar = () => {
                     <Button variant="ghost" className="w-full justify-start" onClick={() => {
                       logout();
                       closeMenu();
+                      navigate("/");
                     }}>
                       Sign Out
                     </Button>

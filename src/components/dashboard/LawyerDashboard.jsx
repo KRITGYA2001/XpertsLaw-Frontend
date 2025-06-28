@@ -88,15 +88,15 @@ const LawyerDashboard = ({ user }) => {
         <div>
           <h1 className="text-3xl font-bold">Welcome, {user.name}</h1>
           <p className="text-muted-foreground">
-            Manage your consultations, clients, and schedule
+            Manage your consultations, clients, and schedule (lawyer)
           </p>
         </div>
-        <Link to="/profile/settings">
+        {/* <Link to="/profile/settings">
           <Button variant="outline" className="gap-2">
             <Settings size={16} />
             Profile Settings
           </Button>
-        </Link>
+        </Link> */}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

@@ -11,6 +11,8 @@ import BookingPage from "@/pages/BookingPage";
 import BookingConfirmationPage from "@/pages/BookingConfirmationPage";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
+import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
+import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import DashboardPage from "@/pages/DashboardPage";
 import PracticeAreasPage from "@/pages/PracticeAreasPage";
 import AboutPage from "@/pages/AboutPage";
@@ -21,6 +23,7 @@ import CookiesPage from "@/pages/CookiesPage";
 import DisclaimerPage from "@/pages/DisclaimerPage";
 import MeetingPage from "@/pages/MeetingPage";
 import NotFoundPage from "@/pages/NotFoundPage";
+import LawyerProfilePage from "@/pages/LawyerProfilePage";
 
 const App = () => {
   return (
@@ -37,6 +40,8 @@ const App = () => {
               <Route path="/booking-confirmation/:id" element={<BookingConfirmationPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/practice-areas" element={<PracticeAreasPage />} />
               <Route path="/practice-areas/:areaId" element={<PracticeAreasPage />} />
@@ -48,6 +53,7 @@ const App = () => {
               <Route path="/disclaimer" element={<DisclaimerPage />} />
               <Route path="/meeting/:meetingId" element={<MeetingPage />} />
               <Route path="*" element={<NotFoundPage />} />
+              <Route path="/profile" element={<LawyerProfilePage />} />
             </Routes>
           </main>
           <Footer />
