@@ -91,12 +91,12 @@ const LawyerDashboard = ({ user }) => {
             Manage your consultations, clients, and schedule (lawyer)
           </p>
         </div>
-        <Link to="/profile/settings">
+        {/* <Link to="/profile/settings">
           <Button variant="outline" className="gap-2">
             <Settings size={16} />
             Profile Settings
           </Button>
-        </Link>
+        </Link> */}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
