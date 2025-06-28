@@ -88,7 +88,7 @@ const LawyerDashboard = ({ user }) => {
         <div>
           <h1 className="text-3xl font-bold">Welcome, {user.name}</h1>
           <p className="text-muted-foreground">
-            Manage your consultations, clients, and schedule
+            Manage your consultations, clients, and schedule (lawyer)
           </p>
         </div>
         <Link to="/profile/settings">

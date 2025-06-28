@@ -1,8 +1,10 @@
+
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Eye, EyeOff } from "lucide-react";
@@ -15,16 +17,17 @@ const LoginForm = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+    rememberMe: false,
   });
   
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     });
   };
   
@@ -33,28 +36,55 @@ const LoginForm = () => {
     setIsLoading(true);
     
     try {
-      const result = await login({
-        email: formData.email,
-        password: formData.password,
+      const formPayload = new FormData();
+      formPayload.append("email", formData.email);
+      formPayload.append("password", formData.password);
+
+      const response = await fetch(
+        "http://xpertslaw-backend-env.eba-s2nkai2i.us-east-1.elasticbeanstalk.com/login",
+        {
+          method: "POST",
+          body: formPayload,
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || data.status !== "success") {
+        throw new Error(data.message || "Login failed");
+      }
+
+      const user = data.data.user;
+      
+      let frontendRole;
+      if (user.user_type === "client") {
+        frontendRole = "client";
+      } else if (user.user_type === "lawyer") {
+        frontendRole = "lawyer";
+      } else {
+        frontendRole = "client"; // fallback
+      }
+
+      // Save user data as needed
+      login({
+        id: user.id,
+        name: `${user.first_name} ${user.last_name}`,
+        email: user.email,
+        role: frontendRole,
+        token: data.data.access,
       });
 
-      if (result.success) {
-        toast({
-          title: "Login Successful",
-          description: "Welcome back to XpertsLaw!",
-        });
-        navigate("/dashboard");
-      } else {
-        toast({
-          title: "Login Failed",
-          description: result.message,
-          variant: "destructive",
-        });
-      }
+      console.log("Saved token:", data.data.access);
+
+      toast({
+        title: "Login Successful",
+        description: "Welcome back to XpertsLaw!",
+      });
+      navigate("/dashboard", { replace: true });
     } catch (error) {
       toast({
         title: "Login Failed",
-        description: error.message || "There was a problem logging in.",
+        description: error.message || "Please check your credentials and try again.",
         variant: "destructive",
       });
     } finally {
@@ -67,7 +97,7 @@ const LoginForm = () => {
       <div className="text-center">
         <h1 className="text-2xl font-bold">Welcome back</h1>
         <p className="text-muted-foreground mt-2">
-          Sign in to your XpertsLaw account
+          Sign in to your account to continue
         </p>
       </div>
       
@@ -86,7 +116,12 @@ const LoginForm = () => {
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password">Password</Label>
+            <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+              Forgot password?
+            </Link>
+          </div>
           <div className="relative">
             <Input
               id="password"
@@ -105,6 +140,23 @@ const LoginForm = () => {
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="rememberMe"
+            name="rememberMe"
+            checked={formData.rememberMe}
+            onCheckedChange={(checked) => 
+              setFormData({...formData, rememberMe: checked})
+            }
+          />
+          <label
+            htmlFor="rememberMe"
+            className="text-sm text-muted-foreground leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          >
+            Remember me for 30 days
+          </label>
         </div>
         
         <Button type="submit" className="w-full" disabled={isLoading}>

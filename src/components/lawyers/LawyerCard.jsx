@@ -1,11 +1,32 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Star, MapPin, Briefcase, Award } from "lucide-react";
 
 const LawyerCard = ({ lawyer }) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleViewProfile = () => {
+    if (!user) {
+      navigate("/login", { state: { from: `/lawyers/${lawyer.id}` } });
+    } else {
+      navigate(`/lawyers/${lawyer.id}`);
+    }
+  };
+
+  const handleBookConsultation = () => {
+    if (!user) {
+      navigate("/login", { state: { from: `/book/${lawyer.id}` } });
+    } else {
+      navigate(`/book/${lawyer.id}`);
+    }
+  };
+
   return (
     <Card className="h-full lawyer-card overflow-hidden">
       <CardContent className="p-0">
@@ -48,13 +69,21 @@ const LawyerCard = ({ lawyer }) => {
             )}
           </div>
           
-          <div className="flex space-x-3">
+          {/* <div className="flex space-x-3">
             <Link to={`/lawyers/${lawyer.id}`} className="flex-1">
               <Button variant="outline" className="w-full">View Profile</Button>
             </Link>
             <Link to={`/book/${lawyer.id}`} className="flex-1">
               <Button className="w-full">Book Consultation</Button>
             </Link>
+          </div> */}
+          <div className="flex space-x-3">
+            <Button onClick={handleViewProfile} variant="outline" className="flex-1">
+              View Profile
+            </Button>
+            <Button onClick={handleBookConsultation} className="flex-1">
+              Book Consultation
+            </Button>
           </div>
         </div>
       </CardContent>
