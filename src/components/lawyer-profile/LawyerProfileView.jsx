@@ -6,13 +6,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Briefcase, GraduationCap, Calendar, User } from "lucide-react";
 
-const API_BASE = "http://xpertslaw-backend-env.eba-s2nkai2i.us-east-1.elasticbeanstalk.com";
+const API_BASE = "https://backend.xpertslaw.com";
 
 const LawyerProfileView = ({ profile, user, onEdit, profileExists = false }) => {
   const [allInstitutions, setAllInstitutions] = useState([]);
   const [loadingInstitutions, setLoadingInstitutions] = useState(false);
 
-  // Fetch institutions if we have education data but no institution names
   useEffect(() => {
     const needsInstitutions = profile?.education?.some(edu => 
       typeof edu.institution === 'number' || 
@@ -51,7 +50,6 @@ const LawyerProfileView = ({ profile, user, onEdit, profileExists = false }) => 
       return institution.name;
     }
     
-    // If institution is an ID (number or string number), find the name
     const institutionId = typeof institution === 'number' ? institution : parseInt(institution);
     if (!isNaN(institutionId) && allInstitutions.length > 0) {
       const match = allInstitutions.find(inst => inst.id === institutionId);
@@ -60,16 +58,13 @@ const LawyerProfileView = ({ profile, user, onEdit, profileExists = false }) => 
       }
     }
     
-    // If institution is a string but not a number, return as is
     if (typeof institution === 'string' && isNaN(institution)) {
       return institution;
     }
     
-    // Fallback
     return loadingInstitutions ? "Loading..." : "N/A";
   };
 
-  // Component for profile photo display
   const ProfilePhoto = ({ photo, userName }) => {
     const [imageError, setImageError] = useState(false);
     

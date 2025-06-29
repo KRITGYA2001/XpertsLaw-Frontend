@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Trash2, Edit, Calendar } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
-const API_BASE = "http://xpertslaw-backend-env.eba-s2nkai2i.us-east-1.elasticbeanstalk.com";
+const API_BASE = "https://backend.xpertslaw.com";
 
 const fetchWithRetry = async (url, options, maxRetries = 3) => {
   for (let i = 0; i < maxRetries; i++) {
@@ -52,7 +52,6 @@ const EducationForm = ({
     setEducationList(educations || []);
   }, [educations]);
 
-  // Fetch institutions when component mounts
   useEffect(() => {
     const fetchInstitutions = async () => {
       try {
@@ -66,7 +65,6 @@ const EducationForm = ({
         const result = await response.json();
         console.log('Institutions API response:', result); // Debug log
         
-        // Handle different possible response structures
         const institutionsData = result?.data?.data || result?.data || result || [];
         setInstitutions(institutionsData);
         
@@ -137,7 +135,7 @@ const EducationForm = ({
     }
     
     const educationData = {
-      institution: selectedInstitution, // Store the full institution object
+      institution: selectedInstitution,
       degree: formData.degree,
       start_date: formData.start_date,
       end_date: formData.end_date
@@ -157,7 +155,6 @@ const EducationForm = ({
   };
 
   const handleSaveAndComplete = () => {
-    console.log('Saving education list:', educationList); // Debug log
     onSave(educationList);
   };
 

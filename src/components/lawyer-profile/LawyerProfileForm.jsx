@@ -21,12 +21,36 @@ const LawyerProfileForm = ({
 }) => {
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [feeError, setFeeError] = useState("");
 
-  // Handle file selection
+  const handleFeeChange = (e) => {
+    const value = e.target.value;
+    
+    if (value === "") {
+      setFeeError("");
+      handleChange(e);
+      return;
+    }
+    
+    const numericValue = parseFloat(value);
+    if (isNaN(numericValue) || numericValue < 0) {
+      setFeeError("Please enter a valid fee amount");
+      handleChange(e);
+      return;
+    }
+    
+    if (numericValue > 0 && numericValue < 500) {
+      setFeeError("Minimum fee must be ₹500 or higher");
+    } else {
+      setFeeError("");
+    }
+    
+    handleChange(e);
+  };
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file type
       const allowedTypes = ['image/png', 'image/jpg', 'image/jpeg'];
       if (!allowedTypes.includes(file.type)) {
         alert('Please select a valid image file (.png, .jpg, .jpeg)');
@@ -40,82 +64,73 @@ const LawyerProfileForm = ({
       }
 
       setPhotoFile(file);
-      setPhotoChanged(true); // Mark that photo has been changed
+      setPhotoChanged(true);
       
-      // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setPhotoPreview(reader.result);
       };
       reader.readAsDataURL(file);
 
-      // Update form data to include the file
       setFormData({ ...formData, photo: file });
     }
   };
 
-  // Remove selected photo
   const removePhoto = () => {
     setPhotoFile(null);
     setPhotoPreview(null);
-    setPhotoChanged(true); // Mark that photo has been changed (removed)
+    setPhotoChanged(true);
     setFormData({ ...formData, photo: "" });
-    // Clear the file input
     const fileInput = document.getElementById('photo-upload');
     if (fileInput) {
       fileInput.value = '';
     }
   };
 
-  // Initialize preview if editing and photo exists
   React.useEffect(() => {
     if (isEditing && formData.photo && typeof formData.photo === 'string' && !photoPreview) {
       setPhotoPreview(formData.photo);
     }
   }, [formData.photo, isEditing, photoPreview]);
 
-  // Enhanced form validation
   const isFormValid = () => {
     const requiredFields = [
       'phone', 'city', 'law_type', 'fee', 'total_experience', 
       'practice_area', 'languages', 'about', 'address'
     ];
     
-    // Check if all required fields are filled
     const fieldsValid = requiredFields.every(field => formData[field]);
     
-    // Check if photo is provided
+    const feeValue = parseFloat(formData.fee);
+    const feeValid = !isNaN(feeValue) && feeValue >= 500;
+    
     let photoValid = false;
     if (isEditing) {
-      // When editing: photo is valid if there's an existing photo OR a new file is uploaded
       photoValid = (formData.photo && !photoChanged) || (photoChanged && photoFile);
     } else {
-      // When creating: must have a photo file
       photoValid = photoFile || formData.photo;
     }
     
-    return fieldsValid && photoValid;
+    return fieldsValid && feeValid && photoValid;
   };
 
-  // Check if photo has been changed (new file uploaded)
-  const hasPhotoChanged = () => {
-    return photoChanged; // Use the state from parent component
-  };
-
-  // Enhanced form submission with validation
   const handleFormSubmit = (e) => {
     e.preventDefault();
     
-    // Additional client-side validation
+    // Check fee validation specifically
+    const feeValue = parseFloat(formData.fee);
+    if (isNaN(feeValue) || feeValue < 500) {
+      alert('Minimum fee must be ₹500 or higher. Please update your fee to continue.');
+      return;
+    }
+    
     if (!isFormValid()) {
       if (isEditing) {
-        // When editing, check if photo was removed without replacement
         if (photoChanged && !photoFile) {
           alert('Please upload a new profile photo or keep the existing one. Photo is required.');
           return;
         }
       } else {
-        // When creating new profile
         if (!photoFile && !photoPreview && !formData.photo) {
           alert('Please upload a profile photo. This field is required.');
           return;
@@ -138,9 +153,6 @@ const LawyerProfileForm = ({
             </h2>
             <p className="text-muted-foreground">
               {isEditing ? "Update your profile information below." : "Fill in your details to create your lawyer profile."}
-            </p>
-            <p className="text-sm text-red-600 mt-2">
-              * All fields including profile photo are required
             </p>
           </div>
 
@@ -167,7 +179,26 @@ const LawyerProfileForm = ({
               </Select>
             </div>
 
-            <div><Label>Fee *</Label><Input name="fee" value={formData.fee} onChange={handleChange} required /></div>
+            <div>
+              <Label>Fee * (Minimum ₹500)</Label>
+              <Input 
+                name="fee" 
+                type="number"
+                min="500"
+                step="50"
+                value={formData.fee} 
+                onChange={handleFeeChange} 
+                placeholder="Enter fee (minimum ₹500)"
+                required 
+                className={feeError ? "border-red-500 focus:border-red-500" : ""}
+              />
+              {feeError && (
+                <p className="text-sm text-red-500 mt-1">{feeError}</p>
+              )}
+              <p className="text-xs text-gray-500 mt-1">
+                Your consultation fee must be at least ₹500
+              </p>
+            </div>
 
             <div>
               <Label>Experience *</Label>
@@ -214,7 +245,6 @@ const LawyerProfileForm = ({
               <Input name="website" value={formData.website || ""} onChange={handleChange} placeholder="Enter your website (optional)" />
             </div>
 
-            {/* Updated Photo Upload Section - Now Required */}
             <div className="md:col-span-2">
               <Label className="text-base font-medium">
                 Profile Photo *

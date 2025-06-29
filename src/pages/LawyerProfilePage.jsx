@@ -1,4 +1,3 @@
-// LawyerProfilePage.jsx (Fixed photo upload bug)
 import React, { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
@@ -38,7 +37,7 @@ const LawyerProfilePage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [photoChanged, setPhotoChanged] = useState(false); // Track if photo was changed
 
-  const API_BASE = "http://xpertslaw-backend-env.eba-s2nkai2i.us-east-1.elasticbeanstalk.com";
+  const API_BASE = "https://backend.xpertslaw.com";
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -52,25 +51,18 @@ const LawyerProfilePage = () => {
       const form = new FormData();
       form.append("user", user.id);
       
-      // Handle all form fields
       Object.entries(formData).forEach(([key, value]) => {
         if (value && key !== 'institution' && key !== 'photo') { 
-          // Handle photo separately
           form.append(key, value.toString());
         }
       });
 
-      // Handle photo field properly
       if (formData.photo) {
         if (formData.photo instanceof File) {
-          // New photo file uploaded
           form.append('photo', formData.photo);
         } else if (typeof formData.photo === 'string' && !photoChanged) {
-          // Existing photo URL - don't include in form data for update
-          // The backend will keep the existing photo if not provided
           console.log('Keeping existing photo, not sending photo field');
         } else if (typeof formData.photo === 'string' && photoChanged) {
-          // This shouldn't happen, but handle it just in case
           console.log('Photo changed but got string instead of file');
         }
       }
@@ -114,7 +106,6 @@ const LawyerProfilePage = () => {
   const saveWorkExperience = async (experiences) => {
     setSubmitting(true);
     try {
-      // Delete existing work experiences first
       if (profile?.work_experience?.length > 0) {
         for (const exp of profile.work_experience) {
           await fetch(`${API_BASE}/lawyers/work_experiences/${exp.id}/`, {
@@ -124,7 +115,6 @@ const LawyerProfilePage = () => {
         }
       }
 
-      // Add new work experiences
       for (const exp of experiences) {
         const workExpData = new FormData();
         workExpData.append("lawyer", profile.id);
@@ -171,7 +161,6 @@ const LawyerProfilePage = () => {
     try {
       console.log('Saving education list:', educationList); // Debug log
       
-      // Delete existing education first
       if (profile?.education?.length > 0) {
         for (const edu of profile.education) {
           await fetch(`${API_BASE}/lawyers/educations/${edu.id}/`, {
@@ -181,12 +170,10 @@ const LawyerProfilePage = () => {
         }
       }
 
-      // Add new education
       for (const edu of educationList) {
         const eduData = new FormData();
         eduData.append("lawyer", profile.id);
         
-        // Handle institution ID properly
         const institutionId = edu.institution?.id || edu.institution;
         if (!institutionId) {
           throw new Error("Institution ID is required for education entry");
@@ -242,7 +229,6 @@ const LawyerProfilePage = () => {
     // Reset photo changed flag
     setPhotoChanged(false);
     
-    // If profile exists, populate form with existing data
     if (profile) {
       setFormData({
         phone: profile.phone || "",
@@ -264,7 +250,6 @@ const LawyerProfilePage = () => {
       setWorkExperiences(profile.work_experience || []);
       setEducations(profile.education || []);
     } else {
-      // If no profile exists, start with empty form
       setFormData({
         phone: "",
         city: "",
@@ -305,7 +290,6 @@ const LawyerProfilePage = () => {
     setEducations([]);
   };
 
-  // Handle case where user is not loaded yet
   if (!user) {
     return (
       <div className="container py-10 flex items-center justify-center">
@@ -328,10 +312,8 @@ const LawyerProfilePage = () => {
     );
   }
 
-  // Render based on current step
   switch (currentStep) {
     case STEPS.BASIC_INFO:
-      // Check if required dropdowns are loaded (excluding institutions)
       if (
         !dropdowns.cities.length ||
         !dropdowns.lawTypes.length ||
@@ -388,8 +370,6 @@ const LawyerProfilePage = () => {
 
     case STEPS.VIEW:
     default:
-      // Always show profile view (even if no profile exists)
-      // Create a dummy profile object if none exists
       const displayProfile = profile || {
         phone: null,
         city: null,

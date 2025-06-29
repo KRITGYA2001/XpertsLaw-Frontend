@@ -7,7 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { ArrowLeft, Mail } from "lucide-react";
 
 // API base URL - use HTTP to match your backend configuration
-const API_BASE_URL = "http://xpertslaw-backend-env.eba-s2nkai2i.us-east-1.elasticbeanstalk.com";
+const API_BASE_URL = "https://backend.xpertslaw.com";
 
 const ForgotPasswordForm = () => {
   const { toast } = useToast();

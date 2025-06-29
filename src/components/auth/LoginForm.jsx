@@ -41,7 +41,7 @@ const LoginForm = () => {
       formPayload.append("password", formData.password);
 
       const response = await fetch(
-        "http://xpertslaw-backend-env.eba-s2nkai2i.us-east-1.elasticbeanstalk.com/login",
+        "https://backend.xpertslaw.com/login",
         {
           method: "POST",
           body: formPayload,
