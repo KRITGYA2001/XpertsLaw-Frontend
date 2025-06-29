@@ -209,7 +209,7 @@ const RegisterForm = () => {
       }
 
       const response = await fetch(
-        "http://xpertslaw-backend-env.eba-s2nkai2i.us-east-1.elasticbeanstalk.com/register",
+        "https://backend.xpertslaw.com/register",
         {
           method: "POST",
           body: formPayload,

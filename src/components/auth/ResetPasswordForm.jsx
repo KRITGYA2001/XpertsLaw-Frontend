@@ -7,7 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Eye, EyeOff, CheckCircle, XCircle } from "lucide-react";
 
 // API base URL - consistent with ForgotPasswordForm
-const API_BASE_URL = "http://xpertslaw-backend-env.eba-s2nkai2i.us-east-1.elasticbeanstalk.com";
+const API_BASE_URL = "https://backend.xpertslaw.com";
 
 const ResetPasswordForm = () => {
   const navigate = useNavigate();

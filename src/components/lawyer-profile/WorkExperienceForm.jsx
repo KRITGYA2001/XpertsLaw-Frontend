@@ -222,7 +222,6 @@ const WorkExperienceForm = ({
             </Card>
           )}
 
-          {/* Navigation buttons */}
           <div className="flex gap-4 justify-end">
             <Button type="button" variant="outline" onClick={onCancel}>
               Cancel
