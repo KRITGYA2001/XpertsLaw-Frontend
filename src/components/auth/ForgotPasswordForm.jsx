@@ -6,8 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { ArrowLeft, Mail } from "lucide-react";
 
-// API base URL - use HTTP to match your backend configuration
-const API_BASE_URL = "https://backend.xpertslaw.com";
+const API_BASE_URL = import.meta.env.VITE_API_BASE;
 
 const ForgotPasswordForm = () => {
   const { toast } = useToast();

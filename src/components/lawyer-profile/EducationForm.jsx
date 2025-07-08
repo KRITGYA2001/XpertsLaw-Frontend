@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Trash2, Edit, Calendar } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
-const API_BASE = "https://backend.xpertslaw.com";
+const API_BASE = import.meta.env.VITE_API_BASE;
 
 const fetchWithRetry = async (url, options, maxRetries = 3) => {
   for (let i = 0; i < maxRetries; i++) {
@@ -142,7 +142,6 @@ const EducationForm = ({
     };
     
     if (editingIndex >= 0) {
-      // Edit existing
       const newEducationList = [...educationList];
       newEducationList[editingIndex] = educationData;
       setEducationList(newEducationList);
@@ -357,7 +356,6 @@ const EducationForm = ({
             </Card>
           )}
 
-          {/* Navigation buttons */}
           <div className="flex gap-4 justify-end">
             <Button type="button" variant="outline" onClick={onCancel}>
               Cancel

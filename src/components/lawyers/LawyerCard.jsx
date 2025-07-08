@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -27,6 +26,9 @@ const LawyerCard = ({ lawyer }) => {
     }
   };
 
+  // Check if user is a lawyer - if so, don't show booking button
+  const isLawyer = user?.role === "lawyer";
+
   return (
     <Card className="h-full lawyer-card overflow-hidden">
       <CardContent className="p-0">
@@ -38,7 +40,11 @@ const LawyerCard = ({ lawyer }) => {
               className="w-full h-full object-cover"
             />
           ) : (
-            <img  alt={`Portrait of ${lawyer.name}, ${lawyer.specialty} attorney`} className="w-full h-full object-cover" src="https://images.unsplash.com/photo-1636369555100-e0ba574af653" />
+            <img  
+              alt={`Portrait of ${lawyer.name}, ${lawyer.specialty} attorney`} 
+              className="w-full h-full object-cover" 
+              src="https://images.unsplash.com/photo-1636369555100-e0ba574af653" 
+            />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
           <div className="absolute bottom-3 left-3 flex items-center space-x-1 bg-white/90 rounded-full px-2 py-1 text-xs font-medium">
@@ -69,21 +75,19 @@ const LawyerCard = ({ lawyer }) => {
             )}
           </div>
           
-          {/* <div className="flex space-x-3">
-            <Link to={`/lawyers/${lawyer.id}`} className="flex-1">
-              <Button variant="outline" className="w-full">View Profile</Button>
-            </Link>
-            <Link to={`/book/${lawyer.id}`} className="flex-1">
-              <Button className="w-full">Book Consultation</Button>
-            </Link>
-          </div> */}
-          <div className="flex space-x-3">
-            <Button onClick={handleViewProfile} variant="outline" className="flex-1">
+          <div className={`flex ${isLawyer ? 'justify-center' : 'space-x-3'}`}>
+            <Button 
+              onClick={handleViewProfile} 
+              variant="outline" 
+              className={isLawyer ? "w-full" : "flex-1"}
+            >
               View Profile
             </Button>
-            <Button onClick={handleBookConsultation} className="flex-1">
-              Book Consultation
-            </Button>
+            {!isLawyer && (
+              <Button onClick={handleBookConsultation} className="flex-1">
+                Book Consultation
+              </Button>
+            )}
           </div>
         </div>
       </CardContent>

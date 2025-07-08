@@ -57,7 +57,6 @@ const LawyerProfileForm = ({
         return;
       }
 
-      // Validate file size (optional - limit to 5MB)
       if (file.size > 5 * 1024 * 1024) {
         alert('File size should not exceed 5MB');
         return;
@@ -116,8 +115,6 @@ const LawyerProfileForm = ({
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
-    
-    // Check fee validation specifically
     const feeValue = parseFloat(formData.fee);
     if (isNaN(feeValue) || feeValue < 500) {
       alert('Minimum fee must be ₹500 or higher. Please update your fee to continue.');
@@ -142,6 +139,9 @@ const LawyerProfileForm = ({
     
     handleSubmit(e);
   };
+
+  // Check if fee is less than 500 to show red styling
+  const isFeeInvalid = formData.fee && parseFloat(formData.fee) < 500;
 
   return (
     <div className="container py-10">
@@ -195,7 +195,7 @@ const LawyerProfileForm = ({
               {feeError && (
                 <p className="text-sm text-red-500 mt-1">{feeError}</p>
               )}
-              <p className="text-xs text-gray-500 mt-1">
+              <p className={`text-xs mt-1 ${isFeeInvalid ? 'text-red-500 font-medium' : 'text-gray-500'}`}>
                 Your consultation fee must be at least ₹500
               </p>
             </div>

@@ -37,7 +37,7 @@ const LawyerProfilePage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [photoChanged, setPhotoChanged] = useState(false); // Track if photo was changed
 
-  const API_BASE = "https://backend.xpertslaw.com";
+  const API_BASE = import.meta.env.VITE_API_BASE;
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Briefcase, GraduationCap, Calendar, User } from "lucide-react";
 
-const API_BASE = "https://backend.xpertslaw.com";
+const API_BASE = import.meta.env.VITE_API_BASE;
 
 const LawyerProfileView = ({ profile, user, onEdit, profileExists = false }) => {
   const [allInstitutions, setAllInstitutions] = useState([]);

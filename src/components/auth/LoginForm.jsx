@@ -9,6 +9,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Eye, EyeOff } from "lucide-react";
 
+const API_BASE = import.meta.env.VITE_API_BASE;
+
 const LoginForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -41,7 +43,7 @@ const LoginForm = () => {
       formPayload.append("password", formData.password);
 
       const response = await fetch(
-        "https://backend.xpertslaw.com/login",
+        `${API_BASE}/login`,
         {
           method: "POST",
           body: formPayload,
@@ -62,10 +64,9 @@ const LoginForm = () => {
       } else if (user.user_type === "lawyer") {
         frontendRole = "lawyer";
       } else {
-        frontendRole = "client"; // fallback
+        frontendRole = "client";
       }
 
-      // Save user data as needed
       login({
         id: user.id,
         name: `${user.first_name} ${user.last_name}`,
@@ -73,8 +74,6 @@ const LoginForm = () => {
         role: frontendRole,
         token: data.data.access,
       });
-
-      console.log("Saved token:", data.data.access);
 
       toast({
         title: "Login Successful",
