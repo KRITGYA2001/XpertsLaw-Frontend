@@ -13,7 +13,6 @@ const ClientDashboard = ({ user }) => {
   const [consultations, setConsultations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [deletingConsultation, setDeletingConsultation] = useState(null);
 
   // Mock data for documents and messages (would be replaced with API calls)
   const documents = [
@@ -112,48 +111,6 @@ const ClientDashboard = ({ user }) => {
       setConsultations([]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDeleteConsultation = async (consultationId) => {
-    setDeletingConsultation(consultationId);
-    
-    try {
-      // Use the consultation API to delete the consultation
-      const headers = {
-        'Authorization': `Bearer ${user.token}`,
-        'Content-Type': 'application/json'
-      };
-
-      const response = await fetch(`${API_BASE}/consultation/consultations/${consultationId}/`, {
-        method: 'DELETE',
-        headers
-      });
-
-      if (response.ok) {
-        // Remove the consultation from local state
-        setConsultations(prev => 
-          prev.filter(consultation => consultation.id !== consultationId)
-        );
-        
-        toast({
-          title: "Consultation Deleted ✅",
-          description: "Your consultation has been cancelled and removed.",
-        });
-      } else {
-        const errorText = await response.text();
-        console.error('Error deleting consultation:', errorText);
-        throw new Error('Failed to delete consultation');
-      }
-    } catch (error) {
-      console.error('Error deleting consultation:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete consultation. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setDeletingConsultation(null);
     }
   };
 
@@ -436,27 +393,6 @@ const ClientDashboard = ({ user }) => {
                                   Lawyer Profile
                                 </Button>
                               </Link>
-                              {consultation.status.toLowerCase() === 'pending' && (
-                                <Button 
-                                  variant="destructive" 
-                                  size="sm" 
-                                  onClick={() => handleDeleteConsultation(consultation.id)}
-                                  disabled={deletingConsultation === consultation.id}
-                                  className="w-full gap-2"
-                                >
-                                  {deletingConsultation === consultation.id ? (
-                                    <>
-                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                      Cancelling...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <XCircle size={16} />
-                                      Cancel Booking
-                                    </>
-                                  )}
-                                </Button>
-                              )}
                             </div>
                           </div>
                         </div>
