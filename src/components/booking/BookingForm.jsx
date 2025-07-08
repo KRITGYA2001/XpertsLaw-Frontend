@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 import BookingSteps from './BookingSteps';
 import DateTimeSelection from './DateTimeSelection';
@@ -9,20 +10,25 @@ import UserInfoForm from './UserInfoForm';
 import CaseDetailsForm from './CaseDetailsForm';
 import BookingSummary from './BookingSummary';
 
+const API_BASE = import.meta.env.VITE_API_BASE;
+
 const BookingForm = () => {
   const { id: lawyerId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   
   const [lawyer, setLawyer] = useState(null);
   const [loadingLawyer, setLoadingLawyer] = useState(true);
+  const [error, setError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     date: "",
     time: "",
     duration: "60",
-    name: "",
-    email: "",
+    name: user?.name || "",
+    email: user?.email || "",
     phone: "",
     caseType: "",
     caseDescription: "",
@@ -34,26 +40,74 @@ const BookingForm = () => {
   useEffect(() => {
     const fetchLawyerData = async () => {
       setLoadingLawyer(true);
-      await new Promise(resolve => setTimeout(resolve, 500)); 
-      const mockLawyers = {
-        "lawyer-1": { id: "lawyer-1", name: "Priya Sharma", specialty: "Family Law", image: "https://images.unsplash.com/photo-1600267185393-e158a781b353", consultationFee: "₹2500" },
-        "lawyer-2": { id: "lawyer-2", name: "Rajesh Kumar", specialty: "Corporate Law", image: "https://images.unsplash.com/photo-1556157382-97eda2d62296", consultationFee: "₹3000" },
-        "lawyer-3": { id: "lawyer-3", name: "Aisha Khan", specialty: "Cyber Law", image: "https://images.unsplash.com/photo-1589254066007-388213c6a9a6", consultationFee: "₹2800" },
-        "lawyer-4": { id: "lawyer-4", name: "Vikram Singh", specialty: "Criminal Law", image: "https://images.unsplash.com/photo-1610642372651-fe6e7bc20934", consultationFee: "₹3500" },
-        "lawyer-5": { id: "lawyer-5", name: "Sunita Reddy", specialty: "Property Law", image: "https://images.unsplash.com/photo-1507591064342-c575625a0136", consultationFee: "₹2200" },
-        "lawyer-6": { id: "lawyer-6", name: "Amit Patel", specialty: "Tax Law", image: "https://images.unsplash.com/photo-1590650213165-c69ce7f9565f", consultationFee: "₹3200" },
-        "lawyer-7": { id: "lawyer-7", name: "Deepika Das", specialty: "Labour Law", image: "https://images.unsplash.com/photo-1542744095-291d1f67b221", consultationFee: "₹2600" },
-        "lawyer-8": { id: "lawyer-8", name: "Arjun Mehta", specialty: "Intellectual Property", image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f", consultationFee: "₹4000" },
-      };
-      const foundLawyer = mockLawyers[lawyerId] || { id: lawyerId, name: "Selected Lawyer", specialty: "Legal Services", image: "", consultationFee: "₹2000" };
-      setLawyer(foundLawyer);
-      setLoadingLawyer(false);
+      setError(null);
+      
+      try {
+        const headers = {};
+        if (user?.token) {
+          headers.Authorization = `Bearer ${user.token}`;
+        }
+        
+        const response = await fetch(`${API_BASE}/lawyers/lawyers/${lawyerId}/`, {
+          headers
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        const lawyerData = result?.data || result;
+        
+        if (lawyerData && lawyerData.user) {
+          // Transform API data to match component expectations
+          const firstName = lawyerData.user?.first_name || "";
+          const lastName = lawyerData.user?.last_name || "";
+          const fullName = `${firstName} ${lastName}`.trim() || lawyerData.user?.name || "Unknown Lawyer";
+
+          const transformedLawyer = {
+            id: lawyerData.id,
+            name: fullName,
+            firstName,
+            lastName,
+            email: lawyerData.user?.email || "",
+            specialty: lawyerData.law_type?.name || "General Practice",
+            rating: lawyerData.rating || 4.5,
+            reviews: lawyerData.reviews_count || 0,
+            location: lawyerData.city?.name || "Location not specified",
+            experience: lawyerData.total_experience?.years || 
+                       lawyerData.total_experience?.name || 
+                       "Experience not specified",
+            image: lawyerData.photo || null,
+            consultationFee: lawyerData.fee || 2000,
+            about: lawyerData.about || "",
+            practiceAreas: Array.isArray(lawyerData.practice_area) 
+              ? lawyerData.practice_area.map(area => area.name)
+              : lawyerData.practice_area?.name ? [lawyerData.practice_area.name] : [],
+            languages: Array.isArray(lawyerData.languages)
+              ? lawyerData.languages.map(lang => lang.name)
+              : lawyerData.languages?.name ? [lawyerData.languages.name] : [],
+            address: lawyerData.address || "",
+            website: lawyerData.website || "",
+            phone: lawyerData.phone || "",
+          };
+
+          setLawyer(transformedLawyer);
+        } else {
+          throw new Error("Lawyer data not found");
+        }
+      } catch (err) {
+        console.error('Error fetching lawyer data:', err);
+        setError(err.message);
+      } finally {
+        setLoadingLawyer(false);
+      }
     };
 
     if (lawyerId) {
       fetchLawyerData();
     }
-  }, [lawyerId]);
+  }, [lawyerId, user]);
   
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -123,8 +177,9 @@ const BookingForm = () => {
     setCurrentStep(prev => prev - 1);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     if (e) e.preventDefault(); 
+    
     if (!formData.agreeToTerms) {
         toast({
           title: "Agreement Required",
@@ -133,29 +188,130 @@ const BookingForm = () => {
         });
         return;
     }
+  
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     
-    // Store minimal data for confirmation page (in real app, this would be a proper booking record)
-    localStorage.setItem(`booking-${lawyerId}`, JSON.stringify({
-      date: formData.date,
-      time: formData.time,
-      duration: formData.duration,
-    }));
-    
-    console.log("Booking submitted:", { lawyerId, ...formData });
-    
-    toast({
-      title: "Consultation Booked!",
-      description: `Your consultation with ${lawyer?.name || 'the lawyer'} has been scheduled.`,
-      duration: 5000,
-    });
-    
-    navigate(`/booking-confirmation/${lawyerId}`);
+    try {
+        // Convert time from "06:00 PM" to "18:00:00"
+        const convertTo24Hour = (time12h) => {
+            const [time, modifier] = time12h.split(' ');
+            let [hours, minutes] = time.split(':');
+            hours = parseInt(hours, 10);
+            
+            if (modifier === 'PM' && hours !== 12) {
+                hours = hours + 12;
+            } else if (modifier === 'AM' && hours === 12) {
+                hours = 0;
+            }
+            
+            return `${String(hours).padStart(2, '0')}:${minutes}:00`;
+        };
+  
+        // Prepare API data
+        const apiBookingData = {
+            lawyer: parseInt(lawyerId),
+            date: formData.date,
+            time: convertTo24Hour(formData.time), // Convert time format
+            user: parseInt(user.id),
+            phone: formData.phone,
+            legal_matter: parseInt(formData.caseType) || 1,
+            description: formData.caseDescription || "",
+            status: 'pending'
+        };
+  
+        console.log('Converted time:', formData.time, '→', apiBookingData.time);
+        console.log('Final API payload:', apiBookingData);
+  
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        
+        if (user?.token) {
+            headers.Authorization = `Bearer ${user.token}`;
+        }
+  
+        const response = await fetch(`${API_BASE}/consultation/consultations/`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(apiBookingData)
+        });
+  
+        console.log('Response status:', response.status);
+  
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Full error response:', errorText);
+            
+            let errorMessage = `HTTP ${response.status} Error`;
+            
+            // Try to extract meaningful error message
+            if (errorText.includes('<!DOCTYPE html>')) {
+                errorMessage = `Server Error (${response.status}) - Check server logs`;
+            } else {
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    errorMessage = errorJson.message || errorJson.detail || errorMessage;
+                } catch (e) {
+                    errorMessage = errorText.substring(0, 100) + '...';
+                }
+            }
+            
+            throw new Error(errorMessage);
+        }
+  
+        const result = await response.json();
+        console.log('Success:', result);
+  
+        toast({
+            title: "Consultation Booked Successfully! 🎉",
+            description: `Your consultation with ${lawyer?.name || 'the lawyer'} has been scheduled.`,
+            duration: 5000,
+        });
+        
+        navigate(`/dashboard`);
+  
+    } catch (error) {
+        console.error('Booking error:', error);
+        
+        toast({
+            title: "Booking Failed",
+            description: `Error: ${error.message}`,
+            variant: "destructive",
+            duration: 8000,
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
   if (loadingLawyer) {
     return (
       <div className="container py-8 md:py-12 flex justify-center items-center min-h-[calc(100vh-200px)]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading lawyer information...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !lawyer) {
+    return (
+      <div className="container py-8 md:py-12 text-center">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mb-4">
+          <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-medium mb-2 text-red-800">Error Loading Lawyer</h3>
+        <p className="text-red-600 mb-6">{error}</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
+        >
+          Try Again
+        </button>
       </div>
     );
   }
@@ -189,6 +345,7 @@ const BookingForm = () => {
                   {currentStep === 1 && (
                     <DateTimeSelection 
                       formData={formData} 
+                      lawyer={lawyer}
                       handleSelectChange={handleSelectChange} 
                       nextStep={nextStep}
                       onDateTimeChange={handleSelectChange}
@@ -210,6 +367,7 @@ const BookingForm = () => {
                       prevStep={prevStep} 
                       handleSubmit={handleSubmit}
                       onTermsChange={(checked) => handleChange({ target: { name: "agreeToTerms", type: "checkbox", checked } })}
+                      isSubmitting={isSubmitting}
                     />
                   )}
                 </form>

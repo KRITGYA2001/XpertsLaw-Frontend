@@ -6,8 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Eye, EyeOff, CheckCircle, XCircle } from "lucide-react";
 
-// API base URL - consistent with ForgotPasswordForm
-const API_BASE_URL = "https://backend.xpertslaw.com";
+const API_BASE_URL = import.meta.env.VITE_API_BASE;
 
 const ResetPasswordForm = () => {
   const navigate = useNavigate();
@@ -21,7 +20,7 @@ const ResetPasswordForm = () => {
   
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [tokenValid, setTokenValid] = useState(null); // null = checking, true = valid, false = invalid
+  const [tokenValid, setTokenValid] = useState(null);
   const [passwordValidation, setPasswordValidation] = useState({
     length: false,
     uppercase: false,
@@ -35,7 +34,6 @@ const ResetPasswordForm = () => {
   const email = searchParams.get("email");
   
   useEffect(() => {
-    // Verify token on component mount
     if (!token || !email) {
       setTokenValid(false);
       return;
@@ -74,7 +72,6 @@ const ResetPasswordForm = () => {
       [name]: value,
     });
 
-    // Real-time password validation
     if (name === "password") {
       validatePassword(value);
     }
@@ -161,7 +158,6 @@ const ResetPasswordForm = () => {
     setIsLoading(true);
     
     try {
-      // Use URLSearchParams instead of FormData for better compatibility
       const requestBody = new URLSearchParams({
         token: token,
         email: email,

@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/components/ui/use-toast";
 import { Eye, EyeOff } from "lucide-react";
 
+const API_BASE = import.meta.env.VITE_API_BASE;
+
 const RegisterForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -128,10 +130,6 @@ const RegisterForm = () => {
     // Repeated characters (e.g., aaaaaaaa)
     if (/^(.)\1+$/.test(password)) return false;
   
-    // Check against user info
-    const userValues = Object.values(userInfo).map(v => v?.toLowerCase?.() || "");
-    if (userValues.some(info => info && lower.includes(info))) return false;
-  
     return true;
   };
 
@@ -139,7 +137,167 @@ const RegisterForm = () => {
     if (!confirmPassword || typeof confirmPassword !== "string") return false;
     if (confirmPassword.trim() !== confirmPassword) return false;
     return password === confirmPassword;
-  };  
+  };
+
+  // Enhanced error handling function
+  const handleRegistrationError = (data) => {
+    // Check if there are specific field errors
+    if (data.errors) {
+      // Handle email-specific errors
+      if (data.errors.email) {
+        const emailError = data.errors.email[0];
+        if (emailError.includes('unique') || emailError.includes('already') || emailError.includes('exists')) {
+          toast({
+            title: "Email Already Registered",
+            description: "This email address is already associated with an account. Please use a different email or try signing in.",
+            variant: "destructive",
+          });
+          return;
+        }
+        if (emailError.includes('invalid') || emailError.includes('format')) {
+          toast({
+            title: "Invalid Email Format",
+            description: "Please enter a valid email address (e.g., name@example.com).",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      // Handle password-specific errors
+      if (data.errors.password) {
+        const passwordError = data.errors.password[0];
+        if (passwordError.includes('weak') || passwordError.includes('strength')) {
+          toast({
+            title: "Password Too Weak",
+            description: "Password must contain at least 8 characters with uppercase, lowercase, number, and special character.",
+            variant: "destructive",
+          });
+          return;
+        }
+        if (passwordError.includes('common') || passwordError.includes('dictionary')) {
+          toast({
+            title: "Password Too Common",
+            description: "This password is too common. Please choose a more unique password.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      // Handle name-specific errors
+      if (data.errors.first_name) {
+        toast({
+          title: "Invalid First Name",
+          description: "First name can only contain letters, hyphens, and apostrophes.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data.errors.last_name) {
+        toast({
+          title: "Invalid Last Name",
+          description: "Last name can only contain letters, hyphens, and apostrophes.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Handle user type errors
+      if (data.errors.user_type) {
+        toast({
+          title: "Invalid Account Type",
+          description: "Please select a valid account type (Client or Lawyer).",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Handle general validation errors
+      if (data.errors.general || data.errors.form) {
+        toast({
+          title: "Form Validation Error",
+          description: data.errors.general?.[0] || data.errors.form?.[0] || "Please check all required fields.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    // Handle specific HTTP status codes
+    if (data.status_code) {
+      switch (data.status_code) {
+        case 409:
+          toast({
+            title: "Account Already Exists",
+            description: "An account with this email already exists. Please sign in instead.",
+            variant: "destructive",
+          });
+          return;
+        case 422:
+          toast({
+            title: "Invalid Information",
+            description: "Please check your information and try again. Make sure all fields are filled correctly.",
+            variant: "destructive",
+          });
+          return;
+        case 429:
+          toast({
+            title: "Too Many Attempts",
+            description: "You've made too many registration attempts. Please wait a few minutes before trying again.",
+            variant: "destructive",
+          });
+          return;
+        case 500:
+          toast({
+            title: "Server Error",
+            description: "We're experiencing technical difficulties. Please try again in a few minutes.",
+            variant: "destructive",
+          });
+          return;
+      }
+    }
+
+    // Handle specific error messages from the server
+    if (data.message) {
+      const message = data.message.toLowerCase();
+      
+      if (message.includes('email') && (message.includes('exists') || message.includes('taken') || message.includes('duplicate'))) {
+        toast({
+          title: "Email Already Registered",
+          description: "This email address is already in use. Please use a different email or sign in to your existing account.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (message.includes('password') && message.includes('weak')) {
+        toast({
+          title: "Password Requirements Not Met",
+          description: "Your password doesn't meet our security requirements. Please ensure it has at least 8 characters with mixed case, numbers, and symbols.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (message.includes('network') || message.includes('connection')) {
+        toast({
+          title: "Connection Error",
+          description: "Unable to connect to our servers. Please check your internet connection and try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    // Fallback for unknown errors
+    toast({
+      title: "Registration Failed",
+      description: data.message || "We couldn't create your account right now. Please try again or contact support if the problem persists.",
+      variant: "destructive",
+    });
+  };
   
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -163,21 +321,29 @@ const RegisterForm = () => {
     }     
 
     if (!isValidEmail(formData.email)) {
-      toast({ title: "Invalid Email", description: "Enter a valid email address.", variant: "destructive" });
+      toast({ 
+        title: "Invalid Email", 
+        description: "Please enter a valid email address (e.g., name@example.com).", 
+        variant: "destructive" 
+      });
       return;
     }
     
-    if (!isValidPassword(formData.password, {
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      email: formData.email,
-    })) {
-      toast({ title: "Weak Password", description: "Choose a stronger password.", variant: "destructive" });
+    if (!isValidPassword(formData.password)) {
+      toast({ 
+        title: "Password Requirements Not Met", 
+        description: "Password must be at least 8 characters with uppercase, lowercase, number, and special character.", 
+        variant: "destructive" 
+      });
       return;
     }
     
     if (!isConfirmPasswordValid(formData.password, formData.confirmPassword)) {
-      toast({ title: "Passwords Don't Match", description: "Please confirm your password correctly.", variant: "destructive" });
+      toast({ 
+        title: "Passwords Don't Match", 
+        description: "Please make sure both password fields match exactly.", 
+        variant: "destructive" 
+      });
       return;
     }    
     
@@ -201,44 +367,52 @@ const RegisterForm = () => {
       formPayload.append("confirm_password", formData.confirmPassword);
       formPayload.append("user_type", formData.accountType);
 
-      // Debug logging
-      console.log("Sending user_type:", formData.accountType);
-      console.log("FormData entries:");
       for (let [key, value] of formPayload.entries()) {
         console.log(key, ":", value);
       }
 
-      const response = await fetch(
-        "https://backend.xpertslaw.com/register",
-        {
-          method: "POST",
-          body: formPayload,
-        }
-      );
+      const response = await fetch(`${API_BASE}/register`, {
+        method: "POST",
+        body: formPayload,
+      });
 
       const data = await response.json();
 
       if (!response.ok || data.status !== "success") {
-        const errorMsg =
-          data?.errors?.email?.[0] || data.message || "Registration failed";
-        throw new Error(errorMsg);
+        // Use the enhanced error handling
+        handleRegistrationError(data);
+        return;
       }
 
-      // Registration successful - show success message and redirect to login
       toast({
-        title: "Registration Successful",
-        description: "Your account has been created successfully! Please sign in to continue.",
+        title: "Welcome to XpertsLaw! 🎉",
+        description: "Your account has been created successfully. You can now sign in and start exploring our legal services.",
+        variant: "default",
       });
-
-      // Redirect to login page instead of auto-login
+      
       navigate("/login", { replace: true });
       
     } catch (error) {
-      toast({
-        title: "Registration Failed",
-        description: error.message || "There was a problem creating your account.",
-        variant: "destructive",
-      });
+      // Handle network errors and other exceptions
+      if (error.name === 'NetworkError' || error.message.includes('fetch')) {
+        toast({
+          title: "Connection Problem",
+          description: "Unable to reach our servers. Please check your internet connection and try again.",
+          variant: "destructive",
+        });
+      } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        toast({
+          title: "Network Error",
+          description: "Could not connect to the server. Please check your internet connection and try again.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Unexpected Error",
+          description: "Something went wrong while creating your account. Please try again or contact support if the issue persists.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }

@@ -1,109 +1,27 @@
 import React, { useState, useEffect } from "react";
 import LawyerCard from "@/components/lawyers/LawyerCard";
 import LawyerFilters from "@/components/lawyers/LawyerFilters";
+import PaginationControls from "@/components/lawyers/PaginationControls";
+import ActiveFiltersBar from "@/components/lawyers/ActiveFiltersBar";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Search, X } from "lucide-react";
+import { Search } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+
+const API_BASE = import.meta.env.VITE_API_BASE;
 
 const LawyersPage = () => {
-  const allLawyers = [
-    {
-      id: "lawyer-1",
-      name: "Priya Sharma",
-      specialty: "Family Law",
-      rating: 4.9,
-      reviews: 127,
-      location: "Mumbai, MH",
-      experience: 12,
-      certifications: "Board Certified Family Law Specialist (India)",
-      image: "https://images.unsplash.com/photo-1600267185393-e158a781b353",
-      consultationFee: "₹2500",
-    },
-    {
-      id: "lawyer-2",
-      name: "Rajesh Kumar",
-      specialty: "Corporate Law",
-      rating: 4.8,
-      reviews: 93,
-      location: "Bangalore, KA",
-      experience: 15,
-      certifications: "Corporate Law Expert (India)",
-      image: "https://images.unsplash.com/photo-1556157382-97eda2d62296",
-      consultationFee: "₹3000",
-    },
-    {
-      id: "lawyer-3",
-      name: "Aisha Khan",
-      specialty: "Cyber Law",
-      rating: 4.9,
-      reviews: 156,
-      location: "Delhi, DL",
-      experience: 10,
-      certifications: "Certified Cyber Law Professional",
-      image: "https://images.unsplash.com/photo-1589254066007-388213c6a9a6",
-      consultationFee: "₹2800",
-    },
-    {
-      id: "lawyer-4",
-      name: "Vikram Singh",
-      specialty: "Criminal Law",
-      rating: 4.7,
-      reviews: 112,
-      location: "Pune, MH",
-      experience: 18,
-      certifications: "Criminal Law Expert (India)",
-      image: "https://images.unsplash.com/photo-1610642372651-fe6e7bc20934",
-      consultationFee: "₹3500",
-    },
-    {
-      id: "lawyer-5",
-      name: "Sunita Reddy",
-      specialty: "Property Law",
-      rating: 4.6,
-      reviews: 87,
-      location: "Hyderabad, TS",
-      experience: 8,
-      certifications: "Real Estate Law Specialist (India)",
-      image: "https://images.unsplash.com/photo-1507591064342-c575625a0136",
-      consultationFee: "₹2200",
-    },
-    {
-      id: "lawyer-6",
-      name: "Amit Patel",
-      specialty: "Tax Law",
-      rating: 4.8,
-      reviews: 142,
-      location: "Ahmedabad, GJ",
-      experience: 14,
-      certifications: "Chartered Accountant & Tax Lawyer",
-      image: "https://images.unsplash.com/photo-1590650213165-c69ce7f9565f",
-      consultationFee: "₹3200",
-    },
-    {
-      id: "lawyer-7",
-      name: "Deepika Das",
-      specialty: "Labour Law",
-      rating: 4.7,
-      reviews: 98,
-      location: "Kolkata, WB",
-      experience: 9,
-      certifications: "Employment Law Expert (India)",
-      image: "https://images.unsplash.com/photo-1542744095-291d1f67b221",
-      consultationFee: "₹2600",
-    },
-    {
-      id: "lawyer-8",
-      name: "Arjun Mehta",
-      specialty: "Intellectual Property",
-      rating: 4.9,
-      reviews: 115,
-      location: "Chennai, TN",
-      experience: 16,
-      certifications: "Patent Attorney (India)",
-      image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f",
-      consultationFee: "₹4000",
-    },
-  ];
+  const { user } = useAuth();
+  const [lawyers, setLawyers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [hasPreviousPage, setHasPreviousPage] = useState(false);
+  const [pageSize] = useState(10);
 
   const [filters, setFilters] = useState({
     searchTerm: "",
@@ -113,54 +31,169 @@ const LawyersPage = () => {
     rating: "all",
   });
 
-  const [filteredLawyers, setFilteredLawyers] = useState(allLawyers);
+  const [filteredLawyers, setFilteredLawyers] = useState([]);
   const [activeFilters, setActiveFilters] = useState([]);
 
-  const indianCitiesMap = {
-    "mumbai": "Mumbai, MH",
-    "delhi": "Delhi, DL",
-    "bangalore": "Bangalore, KA",
-    "hyderabad": "Hyderabad, TS",
-    "chennai": "Chennai, TN",
-    "kolkata": "Kolkata, WB",
-    "pune": "Pune, MH",
-    "ahmedabad": "Ahmedabad, GJ",
+  // Fetch lawyers for specific page
+  const fetchLawyers = async (page = 1) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const headers = {};
+      if (user?.token) {
+        headers.Authorization = `Bearer ${user.token}`;
+      }
+      
+      const response = await fetch(`${API_BASE}/lawyers/lawyers/?page=${page}&page_size=${pageSize}`, {
+        headers
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      // Handle different possible response structures
+      let pageData = [];
+      
+      if (result?.data?.data) {
+        pageData = Array.isArray(result.data.data) ? result.data.data : [];
+      } else if (result?.data) {
+        pageData = Array.isArray(result.data) ? result.data : [];
+      } else if (result?.results) {
+        pageData = Array.isArray(result.results) ? result.results : [];
+      } else if (Array.isArray(result)) {
+        pageData = result;
+      }
+      
+      // Transform API data
+      const transformedLawyers = pageData
+        .filter(lawyer => lawyer.user)
+        .map(lawyer => {
+          const firstName = lawyer.user?.first_name || "";
+          const lastName = lawyer.user?.last_name || "";
+          const fullName = `${firstName} ${lastName}`.trim() || lawyer.user?.name || "Unknown Lawyer";
+
+          return {
+            id: lawyer.id || `lawyer-${lawyer.user?.id}`,
+            name: fullName,
+            specialty: lawyer.law_type?.name || "General Practice",
+            rating: lawyer.rating || 4.5,
+            reviews: lawyer.reviews_count || 0,
+            location: lawyer.city?.name || "Location not specified",
+            experience: lawyer.total_experience?.years || 
+                       lawyer.total_experience?.name || 
+                       "Experience not specified",
+            certifications: lawyer.certifications || null,
+            image: lawyer.photo || null,
+            consultationFee: lawyer.fee ? `₹${lawyer.fee}` : "Fee not specified",
+            about: lawyer.about,
+            practiceAreas: Array.isArray(lawyer.practice_area) 
+              ? lawyer.practice_area.map(area => area.name).join(", ")
+              : lawyer.practice_area?.name || "",
+            languages: Array.isArray(lawyer.languages)
+              ? lawyer.languages.map(lang => lang.name).join(", ")
+              : lawyer.languages?.name || "",
+            address: lawyer.address,
+            website: lawyer.website,
+            phone: lawyer.phone,
+            profileData: lawyer
+          };
+        });
+
+      setLawyers(transformedLawyers);
+      setFilteredLawyers(transformedLawyers);
+      
+      // Update pagination info
+      const pagination = result?.data?.pagination || result?.pagination || {};
+      setTotalCount(pagination.count || 0);
+      setHasNextPage(!!pagination.next);
+      setHasPreviousPage(!!pagination.previous);
+      setCurrentPage(page);
+      
+    } catch (err) {
+      console.error('Error fetching lawyers:', err);
+      setError(err.message);
+      setLawyers([]);
+      setFilteredLawyers([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  useEffect(() => {
+    fetchLawyers(1);
+  }, [user]);
+
+  // Navigation functions
+  const goToNextPage = () => {
+    if (hasNextPage) {
+      fetchLawyers(currentPage + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (hasPreviousPage) {
+      fetchLawyers(currentPage - 1);
+    }
+  };
+
+  const goToPage = (page) => {
+    fetchLawyers(page);
+  };
+
+  // Calculate total pages
+  const totalPages = Math.ceil(totalCount / pageSize);
+
   const applyFilters = () => {
-    let filtered = [...allLawyers];
+    let filtered = [...lawyers];
     const newActiveFilters = [];
 
     if (filters.searchTerm) {
       filtered = filtered.filter(
         lawyer =>
           lawyer.name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-          lawyer.specialty.toLowerCase().includes(filters.searchTerm.toLowerCase())
+          lawyer.specialty.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+          lawyer.practiceAreas.toLowerCase().includes(filters.searchTerm.toLowerCase())
       );
       newActiveFilters.push({ type: 'searchTerm', value: filters.searchTerm, display: `"${filters.searchTerm}"` });
     }
 
     if (filters.location !== 'all') {
-      filtered = filtered.filter(lawyer => lawyer.location === indianCitiesMap[filters.location]);
-      newActiveFilters.push({ type: 'location', value: filters.location, display: `Location: ${indianCitiesMap[filters.location]}` });
+      filtered = filtered.filter(lawyer => 
+        lawyer.location.toLowerCase().includes(filters.location.toLowerCase())
+      );
+      newActiveFilters.push({ type: 'location', value: filters.location, display: `Location: ${filters.location}` });
     }
 
     if (filters.experience !== 'all') {
-      if (filters.experience === '1-5') {
-        filtered = filtered.filter(lawyer => lawyer.experience >= 1 && lawyer.experience <= 5);
-      } else if (filters.experience === '5-10') {
-        filtered = filtered.filter(lawyer => lawyer.experience > 5 && lawyer.experience <= 10);
-      } else if (filters.experience === '10+') {
-        filtered = filtered.filter(lawyer => lawyer.experience > 10);
-      } else if (filters.experience === '20+') {
-        filtered = filtered.filter(lawyer => lawyer.experience >= 20);
-      }
+      filtered = filtered.filter(lawyer => {
+        const experience = typeof lawyer.experience === 'string' 
+          ? parseInt(lawyer.experience.match(/\d+/)?.[0] || '0')
+          : lawyer.experience || 0;
+        
+        if (filters.experience === '1-5') {
+          return experience >= 1 && experience <= 5;
+        } else if (filters.experience === '5-10') {
+          return experience > 5 && experience <= 10;
+        } else if (filters.experience === '10+') {
+          return experience > 10;
+        } else if (filters.experience === '20+') {
+          return experience >= 20;
+        }
+        return true;
+      });
       newActiveFilters.push({ type: 'experience', value: filters.experience, display: `Experience: ${filters.experience} years` });
     }
 
     if (filters.practiceAreas.length > 0) {
       filtered = filtered.filter(lawyer => 
-        filters.practiceAreas.some(area => lawyer.specialty.toLowerCase().includes(area.toLowerCase()))
+        filters.practiceAreas.some(area => 
+          lawyer.specialty.toLowerCase().includes(area.toLowerCase()) ||
+          lawyer.practiceAreas.toLowerCase().includes(area.toLowerCase())
+        )
       );
       filters.practiceAreas.forEach(area => {
         newActiveFilters.push({ type: 'practiceArea', value: area, display: area });
@@ -185,7 +218,7 @@ const LawyersPage = () => {
       practiceAreas: [],
       rating: "all",
     });
-    setFilteredLawyers(allLawyers);
+    setFilteredLawyers(lawyers);
     setActiveFilters([]);
   };
 
@@ -208,8 +241,7 @@ const LawyersPage = () => {
 
   useEffect(() => {
     applyFilters();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters]);
+  }, [filters, lawyers]);
 
   const container = {
     hidden: { opacity: 0 },
@@ -225,6 +257,44 @@ const LawyersPage = () => {
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
   };
+
+  if (loading) {
+    return (
+      <div className="container py-8 md:py-12">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Find a Lawyer</h1>
+          <p className="text-muted-foreground">
+            Connect with experienced attorneys specializing in various practice areas across India
+          </p>
+        </div>
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading lawyers...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container py-8 md:py-12">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Find a Lawyer</h1>
+          <p className="text-muted-foreground">
+            Connect with experienced attorneys specializing in various practice areas across India
+          </p>
+        </div>
+        <div className="text-center py-12">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mb-4">
+            <Search className="h-6 w-6 text-red-600" />
+          </div>
+          <h3 className="text-lg font-medium mb-2 text-red-800">Error Loading Lawyers</h3>
+          <p className="text-red-600 mb-6">{error}</p>
+          <Button onClick={() => fetchLawyers(1)}>Try Again</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container py-8 md:py-12">
@@ -246,49 +316,46 @@ const LawyersPage = () => {
         </div>
 
         <div className="lg:col-span-3">
-          {activeFilters.length > 0 && (
-            <div className="mb-6">
-              <div className="flex items-center flex-wrap gap-2">
-                <span className="text-sm text-muted-foreground">Active filters:</span>
-                {activeFilters.map((filter, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center bg-muted rounded-full px-3 py-1 text-sm"
-                  >
-                    <span>{filter.display}</span>
-                    <button
-                      onClick={() => removeFilter(filter)}
-                      className="ml-2 text-muted-foreground hover:text-foreground"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                ))}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={resetFilters}
-                  className="text-sm"
-                >
-                  Clear all
-                </Button>
-              </div>
-            </div>
-          )}
+          {/* Results summary */}
+          <div className="mb-6">
+            <p className="text-sm text-muted-foreground">
+              Showing {((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, totalCount)} of {totalCount} lawyers
+            </p>
+          </div>
+
+          {/* Active Filters - Now using component */}
+          <ActiveFiltersBar
+            activeFilters={activeFilters}
+            removeFilter={removeFilter}
+            resetFilters={resetFilters}
+          />
 
           {filteredLawyers.length > 0 ? (
-            <motion.div
-              variants={container}
-              initial="hidden"
-              animate="show"
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-            >
-              {filteredLawyers.map((lawyer) => (
-                <motion.div key={lawyer.id} variants={item}>
-                  <LawyerCard lawyer={lawyer} />
-                </motion.div>
-              ))}
-            </motion.div>
+            <>
+              <motion.div
+                variants={container}
+                initial="hidden"
+                animate="show"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              >
+                {filteredLawyers.map((lawyer) => (
+                  <motion.div key={lawyer.id} variants={item}>
+                    <LawyerCard lawyer={lawyer} />
+                  </motion.div>
+                ))}
+              </motion.div>
+
+              {/* Pagination - Now using component */}
+              <PaginationControls
+                currentPage={currentPage}
+                totalPages={totalPages}
+                hasNextPage={hasNextPage}
+                hasPreviousPage={hasPreviousPage}
+                goToNextPage={goToNextPage}
+                goToPreviousPage={goToPreviousPage}
+                goToPage={goToPage}
+              />
+            </>
           ) : (
             <div className="text-center py-12">
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted mb-4">
@@ -296,9 +363,16 @@ const LawyersPage = () => {
               </div>
               <h3 className="text-lg font-medium mb-2">No lawyers found</h3>
               <p className="text-muted-foreground mb-6">
-                No lawyers match your current filter criteria. Try adjusting your filters or search terms.
+                {lawyers.length === 0 
+                  ? "No lawyers found."
+                  : "No lawyers match your current filter criteria. Try adjusting your filters or search terms."
+                }
               </p>
-              <Button onClick={resetFilters}>Reset Filters</Button>
+              {lawyers.length > 0 ? (
+                <Button onClick={resetFilters}>Reset Filters</Button>
+              ) : (
+                <Button onClick={() => fetchLawyers(1)}>Refresh</Button>
+              )}
             </div>
           )}
         </div>

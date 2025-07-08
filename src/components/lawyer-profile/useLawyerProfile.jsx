@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 
-const API_BASE = "https://backend.xpertslaw.com";
+const API_BASE = import.meta.env.VITE_API_BASE;
 
 const fetchWithRetry = async (url, options, maxRetries = 3) => {
   for (let i = 0; i < maxRetries; i++) {

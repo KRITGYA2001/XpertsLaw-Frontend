@@ -5,9 +5,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Loader2 } from "lucide-react";
 
-const CaseDetailsForm = ({ formData, handleChange, handleSelectChange, prevStep, handleSubmit, onTermsChange }) => {
+const CaseDetailsForm = ({ formData, handleChange, handleSelectChange, prevStep, handleSubmit, onTermsChange, isSubmitting }) => {
   
   const handleCheckboxChange = (checked) => {
     handleChange({ target: { name: "agreeToTerms", type: "checkbox", checked } });
@@ -28,7 +28,7 @@ const CaseDetailsForm = ({ formData, handleChange, handleSelectChange, prevStep,
               <SelectValue placeholder="Select case type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="divorce">Divorce</SelectItem>
+            <SelectItem value="divorce">Divorce</SelectItem>
               <SelectItem value="child-custody">Child Custody</SelectItem>
               <SelectItem value="adoption">Adoption</SelectItem>
               <SelectItem value="prenuptial">Prenuptial Agreement</SelectItem>
@@ -55,6 +55,7 @@ const CaseDetailsForm = ({ formData, handleChange, handleSelectChange, prevStep,
             name="agreeToTerms"
             checked={formData.agreeToTerms}
             onCheckedChange={handleCheckboxChange}
+            disabled={isSubmitting}
           />
           <label
             htmlFor="agreeToTerms"
@@ -65,17 +66,26 @@ const CaseDetailsForm = ({ formData, handleChange, handleSelectChange, prevStep,
         </div>
       </div>
       <div className="flex justify-between">
-        <Button type="button" variant="outline" onClick={prevStep}>
+        <Button type="button" variant="outline" onClick={prevStep} disabled={isSubmitting}>
           Back
         </Button>
         <Button 
           type="button" 
           onClick={handleSubmit} 
-          disabled={!formData.agreeToTerms} 
+          disabled={!formData.agreeToTerms || isSubmitting} 
           className="gap-2"
         >
-          Complete Booking
-          <ChevronRight size={16} />
+          {isSubmitting ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              Booking...
+            </>
+          ) : (
+            <>
+              Complete Booking
+              <ChevronRight size={16} />
+            </>
+          )}
         </Button>
       </div>
     </div>
